@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Late Groove — Player</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="rig">
+
+    <!-- DECK -->
+    <div class="deck">
+
+      <div class="brand">
+        Late&nbsp;Groove
+        <span>lounge&nbsp;deck</span>
+      </div>
+
+      <div class="platter-wrap">
+
+        <div class="platter" id="platter">
+          <div class="label"></div>
+        </div>
+
+        <div class="tonearm" id="tonearm">
+
+          <svg viewBox="0 0 96 96" fill="none">
+
+            <circle
+              cx="88"
+              cy="8"
+              r="7"
+              fill="#0F0A12"
+              stroke="#3A2E42"
+              stroke-width="2"
+            />
+
+            <line
+              x1="88"
+              y1="8"
+              x2="18"
+              y2="70"
+              stroke="#3A2E42"
+              stroke-width="4"
+              stroke-linecap="round"
+            />
+
+            <path
+              d="M18 70 L6 78 L14 88 L26 80 Z"
+              fill="#0F0A12"
+              stroke="#3A2E42"
+              stroke-width="2"
+            />
+
+          </svg>
+
+        </div>
+
+      </div>
+
+      <div class="now-meta">
+
+        <div class="now-title" id="nowTitle">
+          —
+        </div>
+
+        <div class="now-artist" id="nowArtist">
+          —
+        </div>
+
+      </div>
+
+      <div class="viz" id="viz">
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+      </div>
+
+    </div>
+
+
+    <!-- PANEL -->
+    <div class="panel">
+
+      <div class="eyebrow" id="statusLine">
+        Paused · Track 1 of 8
+      </div>
+
+
+      <div class="progress-row">
+
+        <div
+          class="bars"
+          id="bars"
+          role="slider"
+          aria-label="Seek"
+          tabindex="0"
+        ></div>
+
+        <div class="time-row">
+
+          <span id="curTime">
+            0:00
+          </span>
+
+          <span id="durTime">
+            0:00
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <div class="transport">
+
+        <button
+          class="tbtn toggle"
+          id="shuffleBtn"
+          title="Shuffle"
+          aria-label="Toggle shuffle"
+        >
+
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+
+            <path d="M16 3h5v5" />
+            <path d="M4 20L21 3" />
+            <path d="M21 16v5h-5" />
+            <path d="M15 15l6 6" />
+            <path d="M4 4l5 5" />
+
+          </svg>
+
+        </button>
+
+
+        <button
+          class="tbtn"
+          id="prevBtn"
+          title="Previous"
+          aria-label="Previous track"
+        >
+
+          <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M6 6h2v12H6zM10 12l9-6v12z" />
+          </svg>
+
+        </button>
+
+
+        <button
+          class="play-btn"
+          id="playBtn"
+          title="Play"
+          aria-label="Play or pause"
+        >
+
+          <svg
+            id="playIcon"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M8 5v14l11-7z" />
+          </svg>
+
+        </button>
+
+
+        <button
+          class="tbtn"
+          id="nextBtn"
+          title="Next"
+          aria-label="Next track"
+        >
+
+          <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M16 6h2v12h-2zM5 6l9 6-9 6z" />
+          </svg>
+
+        </button>
+
+
+        <button
+          class="tbtn toggle"
+          id="repeatBtn"
+          title="Repeat"
+          aria-label="Toggle repeat"
+        >
+
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+
+            <path d="M17 2l4 4-4 4" />
+            <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+            <path d="M7 22l-4-4 4-4" />
+            <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+
+          </svg>
+
+        </button>
+
+      </div>
+
+
+      <div class="lower-row">
+
+        <div class="volume">
+
+          <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M3 10v4h4l5 5V5L7 10H3z" />
+          </svg>
+
+          <input
+            type="range"
+            id="volume"
+            min="0"
+            max="100"
+            value="70"
+            aria-label="Volume"
+          >
+
+        </div>
+
+      </div>
+
+
+      <div class="side-title">
+
+        <span>
+          Playlist
+        </span>
+
+        <span id="playlistCount">
+          8 tracks
+        </span>
+
+      </div>
+
+
+      <ul
+        class="playlist"
+        id="playlist"
+      ></ul>
+
+    </div>
+
+  </div>
+
+
+  <audio
+    id="audio"
+    preload="metadata"
+  ></audio>
+
+
+  <script src="script.js"></script>
+
+</body>
+
+</html>
