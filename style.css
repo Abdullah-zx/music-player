@@ -1030,3 +1030,23 @@ input:focus-visible,
   }
 
 }
+.spotify-login {
+  display: block;
+  margin: 20px auto;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 999px;
+  background: #1db954;
+  color: white;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
+  transition: 0.25s ease;
+}
+
+.spotify-login:hover {
+  background: #1ed760;
+  transform: translateY(-2px);
+}
