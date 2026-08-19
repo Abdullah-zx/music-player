@@ -396,25 +396,71 @@
       /* READY */
 
       player.addListener(
-        "ready",
-        ({ device_id }) => {
+  "ready",
+  async ({ device_id }) => {
 
-          deviceId =
-            device_id;
+    deviceId = device_id;
 
-          statusLine.textContent =
-            "Spotify Connected";
+    console.log("Spotify Device Ready:", device_id);
 
-          nowArtist.textContent =
-            "Ready to play";
+    statusLine.textContent =
+      "Spotify Connected";
 
-          console.log(
-            "Spotify Device:",
-            device_id
-          );
+    nowArtist.textContent =
+      "Ready to play";
 
+    try {
+
+      const response = await fetch(
+        "https://api.spotify.com/v1/me/player",
+        {
+          method: "PUT",
+
+          headers: {
+            Authorization:
+              `Bearer ${accessToken}`,
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            device_ids: [device_id],
+            play: false
+          })
         }
       );
+
+      if (!response.ok) {
+
+        const error =
+          await response.json();
+
+        console.error(
+          "Transfer error:",
+          error
+        );
+
+        statusLine.textContent =
+          "Spotify device transfer failed.";
+
+        return;
+      }
+
+      statusLine.textContent =
+        "Spotify Ready";
+
+      console.log(
+        "Playback transferred to Late Groove"
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
+
+  }
+);
 
 
       /* NOT READY */
