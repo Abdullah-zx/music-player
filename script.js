@@ -1,3 +1,53 @@
+const CLIENT_ID = "4ecf3c792b244381bef1eb73f5c78055";
+const REDIRECT_URI = "https://abdullah-zx.github.io/music-player/";
+
+const spotifyLogin = document.getElementById("spotifyLogin");
+
+function generateRandomString(length) {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  return result;
+}
+
+async function generateCodeChallenge(verifier) {
+  const data = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+
+  return btoa(
+    String.fromCharCode(...new Uint8Array(digest))
+  )
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+spotifyLogin.addEventListener("click", async () => {
+  const verifier = generateRandomString(128);
+
+  localStorage.setItem("spotify_verifier", verifier);
+
+  const challenge = await generateCodeChallenge(verifier);
+
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    response_type: "code",
+    redirect_uri: REDIRECT_URI,
+    code_challenge_method: "S256",
+    code_challenge: challenge,
+    scope:
+      "streaming user-read-email user-read-private user-modify-playback-state"
+  });
+
+  window.location.href =
+    "https://accounts.spotify.com/authorize?" +
+    params.toString();
+});
 (function () {
 
   const tracks = [
