@@ -3,26 +3,6 @@ const REDIRECT_URI = "https://abdullah-zx.github.io/music-player/";
 
 const spotifyLogin = document.getElementById("spotifyLogin");
 
-spotifyLogin.addEventListener("click", async () => {
-  const verifier = generateRandomString(128);
-
-  localStorage.setItem("spotify_verifier", verifier);
-
-  const challenge = await generateCodeChallenge(verifier);
-
-  const params = new URLSearchParams({
-    client_id: CLIENT_ID,
-    response_type: "code",
-    redirect_uri: REDIRECT_URI,
-    code_challenge_method: "S256",
-    code_challenge: challenge,
-    scope: "streaming user-read-email user-read-private user-modify-playback-state"
-  });
-
-  window.location.href =
-    "https://accounts.spotify.com/authorize?" + params.toString();
-});
-
 function generateRandomString(length) {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -45,6 +25,121 @@ async function generateCodeChallenge(verifier) {
     .replace(/\//g, "_")
     .replace(/=+$/, "");
 }
+
+async function loginWithSpotify() {
+  const verifier = generateRandomString(128);
+
+  localStorage.setItem("spotify_verifier", verifier);
+
+  const challenge = await generateCodeChallenge(verifier);
+
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    response_type: "code",
+    redirect_uri: REDIRECT_URI,
+    code_challenge_method: "S256",
+    code_challenge: challenge,
+    scope:
+      "streaming user-read-email user-read-private user-modify-playback-state"
+  });
+
+  window.location.href =
+    "https://accounts.spotify.com/authorize?" + params.toString();
+}
+
+async function getSpotifyToken(code) {
+  const verifier = localStorage.getItem("spotify_verifier");
+
+  const response = await fetch(
+    "https://accounts.spotify.com/api/token",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: new URLSearchParams({
+        client_id: CLIENT_ID,
+        grant_type: "authorization_code",
+        code: code,
+        redirect_uri: REDIRECT_URI,
+        code_verifier: verifier
+      })
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    console.error("Spotify Token Error:", data);
+    throw new Error("Spotify login failed");
+  }
+
+  localStorage.setItem("spotify_access_token", data.access_token);
+
+  if (data.refresh_token) {
+    localStorage.setItem(
+      "spotify_refresh_token",
+      data.refresh_token
+    );
+  }
+
+  localStorage.removeItem("spotify_verifier");
+
+  return data.access_token;
+}
+
+async function handleSpotifyCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  const error = params.get("error");
+
+  if (error) {
+    console.error("Spotify Error:", error);
+    return;
+  }
+
+  if (!code) {
+    return;
+  }
+
+  try {
+    await getSpotifyToken(code);
+
+    window.history.replaceState(
+      {},
+      document.title,
+      window.location.pathname
+    );
+
+    updateSpotifyButton();
+
+    console.log("Spotify login successful!");
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function updateSpotifyButton() {
+  const token = localStorage.getItem("spotify_access_token");
+
+  if (!spotifyLogin) return;
+
+  if (token) {
+    spotifyLogin.textContent = "✓ Spotify Connected";
+    spotifyLogin.classList.add("connected");
+  } else {
+    spotifyLogin.textContent = "Login with Spotify";
+    spotifyLogin.classList.remove("connected");
+  }
+}
+
+spotifyLogin.addEventListener(
+  "click",
+  loginWithSpotify
+);
+
+handleSpotifyCallback();
+updateSpotifyButton();
 (function () {
 
   const tracks = [
