@@ -5,10 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Late Groove — Player</title>
+  <title>Late Groove | Spotify Player</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
-
   <link
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
     rel="stylesheet"
@@ -19,19 +18,40 @@
 
 <body>
 
-  <div class="rig">
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="login-screen">
+
+    <div class="login-card">
+
+      <div class="login-logo">Late Groove</div>
+
+      <p>
+        Connect your Spotify account to start listening.
+      </p>
+
+      <button id="loginBtn" class="spotify-login">
+        Login with Spotify
+      </button>
+
+      <small id="loginStatus">
+        Spotify Premium is required for Web Playback.
+      </small>
+
+    </div>
+
+  </div>
+
+
+  <!-- PLAYER -->
+  <div class="rig" id="playerApp" style="display:none;">
 
     <!-- DECK -->
     <div class="deck">
 
-<div class="brand">
-  <div>Late&nbsp;Groove</div>
-  <span>lounge&nbsp;deck</span>
-</div>
-
-<button id="spotifyLogin" class="spotify-login">
-  Login with Spotify
-</button>
+      <div class="brand">
+        Late&nbsp;Groove
+        <span>lounge&nbsp;deck</span>
+      </div>
 
       <div class="platter-wrap">
 
@@ -78,11 +98,11 @@
       <div class="now-meta">
 
         <div class="now-title" id="nowTitle">
-          —
+          Spotify Player
         </div>
 
         <div class="now-artist" id="nowArtist">
-          —
+          Connect Spotify
         </div>
 
       </div>
@@ -104,10 +124,31 @@
     <div class="panel">
 
       <div class="eyebrow" id="statusLine">
-        Paused · Track 1 of 8
+        Connecting to Spotify...
       </div>
 
 
+      <!-- SEARCH -->
+      <div class="spotify-search">
+
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search Spotify..."
+        >
+
+        <button id="searchBtn">
+          Search
+        </button>
+
+      </div>
+
+
+      <!-- SEARCH RESULTS -->
+      <div id="searchResults" class="search-results"></div>
+
+
+      <!-- PROGRESS -->
       <div class="progress-row">
 
         <div
@@ -133,32 +174,15 @@
       </div>
 
 
+      <!-- CONTROLS -->
       <div class="transport">
 
         <button
           class="tbtn toggle"
           id="shuffleBtn"
           title="Shuffle"
-          aria-label="Toggle shuffle"
         >
-
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-
-            <path d="M16 3h5v5" />
-            <path d="M4 20L21 3" />
-            <path d="M21 16v5h-5" />
-            <path d="M15 15l6 6" />
-            <path d="M4 4l5 5" />
-
-          </svg>
-
+          ⇄
         </button>
 
 
@@ -166,16 +190,8 @@
           class="tbtn"
           id="prevBtn"
           title="Previous"
-          aria-label="Previous track"
         >
-
-          <svg
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <path d="M6 6h2v12H6zM10 12l9-6v12z" />
-          </svg>
-
+          ◀
         </button>
 
 
@@ -183,7 +199,6 @@
           class="play-btn"
           id="playBtn"
           title="Play"
-          aria-label="Play or pause"
         >
 
           <svg
@@ -201,16 +216,8 @@
           class="tbtn"
           id="nextBtn"
           title="Next"
-          aria-label="Next track"
         >
-
-          <svg
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <path d="M16 6h2v12h-2zM5 6l9 6-9 6z" />
-          </svg>
-
+          ▶
         </button>
 
 
@@ -218,40 +225,19 @@
           class="tbtn toggle"
           id="repeatBtn"
           title="Repeat"
-          aria-label="Toggle repeat"
         >
-
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-
-            <path d="M17 2l4 4-4 4" />
-            <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-            <path d="M7 22l-4-4 4-4" />
-            <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-
-          </svg>
-
+          ↻
         </button>
 
       </div>
 
 
+      <!-- VOLUME -->
       <div class="lower-row">
 
         <div class="volume">
 
-          <svg
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <path d="M3 10v4h4l5 5V5L7 10H3z" />
-          </svg>
+          <span>🔊</span>
 
           <input
             type="range"
@@ -259,7 +245,6 @@
             min="0"
             max="100"
             value="70"
-            aria-label="Volume"
           >
 
         </div>
@@ -267,14 +252,15 @@
       </div>
 
 
+      <!-- PLAYLIST -->
       <div class="side-title">
 
         <span>
-          Playlist
+          Spotify Search
         </span>
 
         <span id="playlistCount">
-          8 tracks
+          Ready
         </span>
 
       </div>
@@ -290,14 +276,13 @@
   </div>
 
 
-  <audio
-    id="audio"
-    preload="metadata"
-  ></audio>
+  <audio id="audio"></audio>
 
- <script src="https://sdk.scdn.co/spotify-player.js"></script>
- <script src="spotify.js"></script>
- <script src="script.js"></script>
+
+  <!-- SPOTIFY WEB PLAYBACK SDK -->
+  <script src="https://sdk.scdn.co/spotify-player.js"></script>
+
+  <script src="script.js"></script>
 
 </body>
 

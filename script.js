@@ -1,204 +1,37 @@
-const CLIENT_ID = "4ecf3c792b244381bef1eb73f5c78055";
-const REDIRECT_URI = "https://abdullah-zx.github.io/music-player/";
+(() => {
 
-const spotifyLogin = document.getElementById("spotifyLogin");
+  /* ================================
+     SPOTIFY CONFIG
+  ================================= */
 
-function generateRandomString(length) {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const CLIENT_ID = "4ecf3c792b244381bef1eb73f5c78055";
 
-  let result = "";
+  const REDIRECT_URI =
+    "https://abdullah-zx.github.io/music-player/";
 
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-
-  return result;
-}
-
-async function generateCodeChallenge(verifier) {
-  const data = new TextEncoder().encode(verifier);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-
-  return btoa(String.fromCharCode(...new Uint8Array(digest)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-async function loginWithSpotify() {
-  const verifier = generateRandomString(128);
-
-  localStorage.setItem("spotify_verifier", verifier);
-
-  const challenge = await generateCodeChallenge(verifier);
-
-  const params = new URLSearchParams({
-    client_id: CLIENT_ID,
-    response_type: "code",
-    redirect_uri: REDIRECT_URI,
-    code_challenge_method: "S256",
-    code_challenge: challenge,
-    scope:
-      "streaming user-read-email user-read-private user-modify-playback-state"
-  });
-
-  window.location.href =
-    "https://accounts.spotify.com/authorize?" + params.toString();
-}
-
-async function getSpotifyToken(code) {
-  const verifier = localStorage.getItem("spotify_verifier");
-
-  const response = await fetch(
-    "https://accounts.spotify.com/api/token",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: new URLSearchParams({
-        client_id: CLIENT_ID,
-        grant_type: "authorization_code",
-        code: code,
-        redirect_uri: REDIRECT_URI,
-        code_verifier: verifier
-      })
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    console.error("Spotify Token Error:", data);
-    throw new Error("Spotify login failed");
-  }
-
-  localStorage.setItem("spotify_access_token", data.access_token);
-
-  if (data.refresh_token) {
-    localStorage.setItem(
-      "spotify_refresh_token",
-      data.refresh_token
-    );
-  }
-
-  localStorage.removeItem("spotify_verifier");
-
-  return data.access_token;
-}
-
-async function handleSpotifyCallback() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get("code");
-  const error = params.get("error");
-
-  if (error) {
-    console.error("Spotify Error:", error);
-    return;
-  }
-
-  if (!code) {
-    return;
-  }
-
-  try {
-    await getSpotifyToken(code);
-
-    window.history.replaceState(
-      {},
-      document.title,
-      window.location.pathname
-    );
-
-    updateSpotifyButton();
-
-    console.log("Spotify login successful!");
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-function updateSpotifyButton() {
-  const token = localStorage.getItem("spotify_access_token");
-
-  if (!spotifyLogin) return;
-
-  if (token) {
-    spotifyLogin.textContent = "✓ Spotify Connected";
-    spotifyLogin.classList.add("connected");
-  } else {
-    spotifyLogin.textContent = "Login with Spotify";
-    spotifyLogin.classList.remove("connected");
-  }
-}
-
-spotifyLogin.addEventListener(
-  "click",
-  loginWithSpotify
-);
-
-handleSpotifyCallback();
-updateSpotifyButton();
-(function () {
-
-  const tracks = [
-
-    {
-      title: "Amber Static",
-      artist: "Nightbloom Trio",
-      src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-    },
-
-    {
-      title: "Slow Neon",
-      artist: "Kōji Aoyama",
-      src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
-    },
-
-    {
-      title: "Corner Booth",
-      artist: "The Low Fidelities",
-      src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
-    },
-
-    {
-      title: "Velvet Rewind",
-      artist: "Marta Solene",
-      src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"
-    },
-
-    {
-      title: "Streetlight Haze",
-      artist: "Nightbloom Trio",
-      src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3"
-    },
-
-    {
-      title: "Analog Heart",
-      artist: "Ruth & The Radios",
-      src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3"
-    },
-
-    {
-      title: "After Hours Reprise",
-      artist: "Kōji Aoyama",
-      src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3"
-    },
-
-    {
-      title: "Last Call",
-      artist: "The Low Fidelities",
-      src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3"
-    }
-
+  const SCOPES = [
+    "streaming",
+    "user-read-email",
+    "user-read-private",
+    "user-modify-playback-state"
   ];
 
 
-  /* DOM ELEMENTS */
+  /* ================================
+     DOM
+  ================================= */
 
-  const audio =
-    document.getElementById("audio");
+  const loginScreen =
+    document.getElementById("loginScreen");
+
+  const playerApp =
+    document.getElementById("playerApp");
+
+  const loginBtn =
+    document.getElementById("loginBtn");
+
+  const loginStatus =
+    document.getElementById("loginStatus");
 
   const playBtn =
     document.getElementById("playBtn");
@@ -254,21 +87,29 @@ updateSpotifyButton();
   const playlistCount =
     document.getElementById("playlistCount");
 
+  const searchInput =
+    document.getElementById("searchInput");
 
-  /* ICONS */
+  const searchBtn =
+    document.getElementById("searchBtn");
 
-  const ICON_PLAY =
-    '<path d="M8 5v14l11-7z"/>';
-
-  const ICON_PAUSE =
-    '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+  const searchResults =
+    document.getElementById("searchResults");
 
 
-  /* SETTINGS */
+  /* ================================
+     VARIABLES
+  ================================= */
 
   const BAR_COUNT = 48;
 
-  let current = 0;
+  let accessToken = null;
+
+  let player = null;
+
+  let deviceId = null;
+
+  let currentTrack = null;
 
   let isPlaying = false;
 
@@ -277,34 +118,591 @@ updateSpotifyButton();
   let repeat = false;
 
 
-  /* FORMAT TIME */
+  /* ================================
+     PKCE
+  ================================= */
 
-  function fmt(seconds) {
+  function randomString(length = 64) {
 
-    if (
-      !Number.isFinite(seconds) ||
-      seconds < 0
-    ) {
-      seconds = 0;
-    }
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    let result = "";
+
+    const randomValues =
+      crypto.getRandomValues(
+        new Uint8Array(length)
+      );
+
+    randomValues.forEach(value => {
+      result += chars[value % chars.length];
+    });
+
+    return result;
+  }
 
 
-    const minutes =
-      Math.floor(seconds / 60);
+  async function sha256(plain) {
+
+    const encoder =
+      new TextEncoder();
+
+    const data =
+      encoder.encode(plain);
+
+    return window.crypto.subtle.digest(
+      "SHA-256",
+      data
+    );
+  }
 
 
-    const secs =
-      Math.floor(seconds % 60)
-        .toString()
-        .padStart(2, "0");
+  function base64urlencode(input) {
+
+    return btoa(
+      String.fromCharCode(...new Uint8Array(input))
+    )
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  }
 
 
-    return `${minutes}:${secs}`;
+  async function createChallenge(verifier) {
+
+    const hashed =
+      await sha256(verifier);
+
+    return base64urlencode(hashed);
+  }
+
+
+  /* ================================
+     LOGIN
+  ================================= */
+
+  async function login() {
+
+    const verifier =
+      randomString(64);
+
+    const challenge =
+      await createChallenge(verifier);
+
+    localStorage.setItem(
+      "spotify_verifier",
+      verifier
+    );
+
+    const params =
+      new URLSearchParams({
+
+        client_id: CLIENT_ID,
+
+        response_type: "code",
+
+        redirect_uri: REDIRECT_URI,
+
+        code_challenge_method: "S256",
+
+        code_challenge: challenge,
+
+        scope: SCOPES.join(" ")
+
+      });
+
+
+    window.location.href =
+      "https://accounts.spotify.com/authorize?" +
+      params.toString();
 
   }
 
 
-  /* BUILD SEEK BARS */
+  loginBtn.addEventListener(
+    "click",
+    login
+  );
+
+
+  /* ================================
+     GET ACCESS TOKEN
+  ================================= */
+
+  async function handleCallback() {
+
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    const code =
+      params.get("code");
+
+    const error =
+      params.get("error");
+
+
+    if (error) {
+
+      loginStatus.textContent =
+        "Spotify login was cancelled.";
+
+      return false;
+
+    }
+
+
+    if (!code) {
+
+      return false;
+
+    }
+
+
+    const verifier =
+      localStorage.getItem(
+        "spotify_verifier"
+      );
+
+
+    if (!verifier) {
+
+      loginStatus.textContent =
+        "Login session expired. Please login again.";
+
+      return false;
+
+    }
+
+
+    try {
+
+      const response =
+        await fetch(
+          "https://accounts.spotify.com/api/token",
+          {
+
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/x-www-form-urlencoded"
+            },
+
+            body:
+              new URLSearchParams({
+
+                client_id:
+                  CLIENT_ID,
+
+                grant_type:
+                  "authorization_code",
+
+                code:
+                  code,
+
+                redirect_uri:
+                  REDIRECT_URI,
+
+                code_verifier:
+                  verifier
+
+              })
+
+          }
+        );
+
+
+      const data =
+        await response.json();
+
+
+      if (!response.ok) {
+
+        console.error(data);
+
+        throw new Error(
+          "Token request failed"
+        );
+
+      }
+
+
+      accessToken =
+        data.access_token;
+
+
+      localStorage.removeItem(
+        "spotify_verifier"
+      );
+
+
+      window.history.replaceState(
+        {},
+        document.title,
+        REDIRECT_URI
+      );
+
+
+      return true;
+
+    } catch (error) {
+
+      console.error(error);
+
+      loginStatus.textContent =
+        "Spotify authentication failed.";
+
+      return false;
+
+    }
+
+  }
+
+
+  /* ================================
+     SPOTIFY PLAYER
+  ================================= */
+
+  window.onSpotifyWebPlaybackSDKReady =
+    () => {
+
+      if (!accessToken) {
+        return;
+      }
+
+
+      player =
+        new Spotify.Player({
+
+          name:
+            "Late Groove",
+
+          volume:
+            Number(volumeInput.value) / 100,
+
+          getOAuthToken: callback => {
+
+            callback(accessToken);
+
+          },
+
+          enableMediaSession: true
+
+        });
+
+
+      /* READY */
+
+      player.addListener(
+        "ready",
+        ({ device_id }) => {
+
+          deviceId =
+            device_id;
+
+          statusLine.textContent =
+            "Spotify Connected";
+
+          nowArtist.textContent =
+            "Ready to play";
+
+          console.log(
+            "Spotify Device:",
+            device_id
+          );
+
+        }
+      );
+
+
+      /* NOT READY */
+
+      player.addListener(
+        "not_ready",
+        ({ device_id }) => {
+
+          console.log(
+            "Device offline:",
+            device_id
+          );
+
+          statusLine.textContent =
+            "Spotify device offline";
+
+        }
+      );
+
+
+      /* PLAYER STATE */
+
+      player.addListener(
+        "player_state_changed",
+        state => {
+
+          if (!state) {
+            return;
+          }
+
+
+          const track =
+            state.track_window.current_track;
+
+
+          currentTrack =
+            track;
+
+
+          isPlaying =
+            !state.paused;
+
+
+          updateTrackInfo(track);
+
+          updatePlaybackState(state);
+
+        }
+      );
+
+
+      /* ERRORS */
+
+      player.addListener(
+        "initialization_error",
+        ({ message }) => {
+
+          console.error(
+            "Initialization:",
+            message
+          );
+
+        }
+      );
+
+
+      player.addListener(
+        "authentication_error",
+        ({ message }) => {
+
+          console.error(
+            "Authentication:",
+            message
+          );
+
+          statusLine.textContent =
+            "Spotify authentication error.";
+
+        }
+      );
+
+
+      player.addListener(
+        "account_error",
+        ({ message }) => {
+
+          console.error(
+            "Account:",
+            message
+          );
+
+          statusLine.textContent =
+            "Spotify Premium is required.";
+
+        }
+      );
+
+
+      player.addListener(
+        "playback_error",
+        ({ message }) => {
+
+          console.error(
+            "Playback:",
+            message
+          );
+
+          statusLine.textContent =
+            "Playback error.";
+
+        }
+      );
+
+
+      player.addListener(
+        "autoplay_failed",
+        () => {
+
+          console.log(
+            "Autoplay blocked by browser."
+          );
+
+        }
+      );
+
+
+      player.connect();
+
+    };
+
+
+  /* ================================
+     TRACK INFO
+  ================================= */
+
+  function updateTrackInfo(track) {
+
+    if (!track) {
+      return;
+    }
+
+
+    nowTitle.textContent =
+      track.name;
+
+
+    nowArtist.textContent =
+      track.artists
+        .map(artist => artist.name)
+        .join(", ");
+
+
+    if (track.album?.images?.length) {
+
+      const image =
+        track.album.images[0].url;
+
+      document.body.style.setProperty(
+        "--album-art",
+        `url("${image}")`
+      );
+
+    }
+
+  }
+
+
+  /* ================================
+     PLAYBACK STATE
+  ================================= */
+
+  function updatePlaybackState(state) {
+
+    const position =
+      state.position;
+
+    const duration =
+      state.duration;
+
+
+    curTimeEl.textContent =
+      formatTime(position);
+
+
+    durTimeEl.textContent =
+      formatTime(duration);
+
+
+    const ratio =
+      duration
+        ? position / duration
+        : 0;
+
+
+    const filled =
+      Math.round(
+        ratio * BAR_COUNT
+      );
+
+
+    barEls.forEach(
+      (bar, index) => {
+
+        bar.classList.toggle(
+          "fill",
+          index < filled
+        );
+
+      }
+    );
+
+
+    if (isPlaying) {
+
+      playIcon.innerHTML =
+        '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+
+      platter.classList.add(
+        "spinning"
+      );
+
+      tonearm.classList.add(
+        "playing"
+      );
+
+      viz.classList.add(
+        "on"
+      );
+
+      playBtn.title =
+        "Pause";
+
+      statusLine.textContent =
+        "Playing on Late Groove";
+
+    } else {
+
+      playIcon.innerHTML =
+        '<path d="M8 5v14l11-7z"/>';
+
+      platter.classList.remove(
+        "spinning"
+      );
+
+      tonearm.classList.remove(
+        "playing"
+      );
+
+      viz.classList.remove(
+        "on"
+      );
+
+      playBtn.title =
+        "Play";
+
+      statusLine.textContent =
+        "Paused";
+
+    }
+
+  }
+
+
+  /* ================================
+     TIME
+  ================================= */
+
+  function formatTime(ms) {
+
+    const seconds =
+      Math.floor(ms / 1000);
+
+    const minutes =
+      Math.floor(seconds / 60);
+
+    const remaining =
+      String(seconds % 60)
+        .padStart(2, "0");
+
+
+    return `${minutes}:${remaining}`;
+
+  }
+
+
+  /* ================================
+     SEEK BARS
+  ================================= */
 
   for (
     let i = 0;
@@ -315,7 +713,8 @@ updateSpotifyButton();
     const bar =
       document.createElement("div");
 
-    bar.className = "bar";
+    bar.className =
+      "bar";
 
     barsEl.appendChild(bar);
 
@@ -328,87 +727,227 @@ updateSpotifyButton();
     );
 
 
-  /* PLAYLIST */
+  /* ================================
+     PLAY / PAUSE
+  ================================= */
 
-  function renderPlaylist() {
+  playBtn.addEventListener(
+    "click",
+    async () => {
 
-    playlistEl.innerHTML = "";
-
-    playlistCount.textContent =
-      `${tracks.length} tracks`;
-
-
-    tracks.forEach(
-      (track, index) => {
-
-        const li =
-          document.createElement("li");
+      if (!player) {
+        return;
+      }
 
 
-        li.className =
-          "track" +
-          (
-            index === current
-              ? " active"
-              : ""
-          );
+      await player.togglePlay();
+
+    }
+  );
 
 
-        li.tabIndex = 0;
+  /* ================================
+     NEXT
+  ================================= */
+
+  nextBtn.addEventListener(
+    "click",
+    async () => {
+
+      if (!player) {
+        return;
+      }
 
 
-        li.innerHTML = `
-          <span class="track-num">
-            ${index + 1}
-          </span>
+      await player.nextTrack();
 
-          <span class="eq-mini">
-            <i></i>
-            <i></i>
-            <i></i>
-          </span>
-
-          <span class="track-info">
-
-            <div class="track-title">
-              ${track.title}
-            </div>
-
-            <div class="track-artist">
-              ${track.artist}
-            </div>
-
-          </span>
-
-          <span
-            class="track-dur"
-            data-dur="${index}"
-          >
-            --:--
-          </span>
-        `;
+    }
+  );
 
 
-        li.addEventListener(
-          "click",
-          () => {
-            loadTrack(index, true);
+  /* ================================
+     PREVIOUS
+  ================================= */
+
+  prevBtn.addEventListener(
+    "click",
+    async () => {
+
+      if (!player) {
+        return;
+      }
+
+
+      await player.previousTrack();
+
+    }
+  );
+
+
+  /* ================================
+     VOLUME
+  ================================= */
+
+  volumeInput.addEventListener(
+    "input",
+    () => {
+
+      if (!player) {
+        return;
+      }
+
+
+      player.setVolume(
+        Number(volumeInput.value) / 100
+      );
+
+    }
+  );
+
+
+  /* ================================
+     SHUFFLE
+  ================================= */
+
+  shuffleBtn.addEventListener(
+    "click",
+    async () => {
+
+      shuffle =
+        !shuffle;
+
+
+      shuffleBtn.classList.toggle(
+        "active",
+        shuffle
+      );
+
+
+      if (!accessToken) {
+        return;
+      }
+
+
+      await fetch(
+        "https://api.spotify.com/v1/me/player/shuffle?state=" +
+        shuffle,
+        {
+
+          method: "PUT",
+
+          headers: {
+            Authorization:
+              `Bearer ${accessToken}`
           }
-        );
+
+        }
+      );
+
+    }
+  );
 
 
-        li.addEventListener(
-          "keydown",
-          (event) => {
+  /* ================================
+     REPEAT
+  ================================= */
 
-            if (
-              event.key === "Enter" ||
-              event.key === " "
-            ) {
+  repeatBtn.addEventListener(
+    "click",
+    async () => {
 
-              event.preventDefault();
+      repeat =
+        !repeat;
 
-              loadTrack(index, true);
+
+      repeatBtn.classList.toggle(
+        "active",
+        repeat
+      );
+
+
+      if (!accessToken) {
+        return;
+      }
+
+
+      await fetch(
+        "https://api.spotify.com/v1/me/player/repeat?state=" +
+        (repeat ? "track" : "off"),
+        {
+
+          method: "PUT",
+
+          headers: {
+            Authorization:
+              `Bearer ${accessToken}`
+          }
+
+        }
+      );
+
+    }
+  );
+
+
+  /* ================================
+     SEARCH SPOTIFY
+  ================================= */
+
+  searchBtn.addEventListener(
+    "click",
+    searchSpotify
+  );
+
+
+  searchInput.addEventListener(
+    "keydown",
+    event => {
+
+      if (event.key === "Enter") {
+
+        searchSpotify();
+
+      }
+
+    }
+  );
+
+
+  async function searchSpotify() {
+
+    const query =
+      searchInput.value.trim();
+
+
+    if (!query || !accessToken) {
+      return;
+    }
+
+
+    searchResults.innerHTML =
+      "<p>Searching...</p>";
+
+
+    try {
+
+      const response =
+        await fetch(
+          "https://api.spotify.com/v1/search?" +
+          new URLSearchParams({
+
+            q: query,
+
+            type: "track",
+
+            limit: "10"
+
+          }),
+          {
+
+            headers: {
+
+              Authorization:
+                `Bearer ${accessToken}`
 
             }
 
@@ -416,585 +955,258 @@ updateSpotifyButton();
         );
 
 
-        playlistEl.appendChild(li);
-
-      }
-    );
-
-  }
+      const data =
+        await response.json();
 
 
-  /* ACTIVE TRACK */
+      if (!response.ok) {
 
-  function setActiveRow() {
-
-    Array.from(
-      playlistEl.children
-    ).forEach(
-      (li, index) => {
-
-        li.classList.toggle(
-          "active",
-          index === current
+        throw new Error(
+          data.error?.message ||
+          "Search failed"
         );
 
       }
-    );
-
-  }
 
 
-  /* LOAD TRACK */
-
-  function loadTrack(
-    index,
-    autoplay
-  ) {
-
-    current =
-      (
-        index + tracks.length
-      ) % tracks.length;
+      renderSearchResults(
+        data.tracks.items
+      );
 
 
-    const track =
-      tracks[current];
+    } catch (error) {
 
+      console.error(error);
 
-    audio.src =
-      track.src;
-
-
-    nowTitle.textContent =
-      track.title;
-
-
-    nowArtist.textContent =
-      track.artist;
-
-
-    setActiveRow();
-
-    updateStatus();
-
-
-    if (autoplay) {
-
-      play();
-
-    } else {
-
-      pause();
+      searchResults.innerHTML =
+        "<p>Unable to search Spotify.</p>";
 
     }
 
   }
 
 
-  /* PLAY */
+  /* ================================
+     SEARCH RESULTS
+  ================================= */
 
-  function play() {
+  function renderSearchResults(
+    tracks
+  ) {
 
-    audio.play()
-      .then(() => {
-
-        isPlaying = true;
-
-        playIcon.innerHTML =
-          ICON_PAUSE;
-
-        playBtn.title =
-          "Pause";
-
-        platter.classList.add(
-          "spinning"
-        );
-
-        tonearm.classList.add(
-          "playing"
-        );
-
-        viz.classList.add(
-          "on"
-        );
-
-        updateStatus();
-
-      })
-      .catch(() => {
-
-        isPlaying = false;
-
-      });
-
-  }
+    searchResults.innerHTML =
+      "";
 
 
-  /* PAUSE */
+    if (!tracks.length) {
 
-  function pause() {
-
-    audio.pause();
-
-    isPlaying = false;
-
-    playIcon.innerHTML =
-      ICON_PLAY;
-
-    playBtn.title =
-      "Play";
-
-    platter.classList.remove(
-      "spinning"
-    );
-
-    tonearm.classList.remove(
-      "playing"
-    );
-
-    viz.classList.remove(
-      "on"
-    );
-
-    updateStatus();
-
-  }
-
-
-  /* PLAY / PAUSE */
-
-  function togglePlay() {
-
-    if (!audio.src) {
-
-      loadTrack(0, true);
+      searchResults.innerHTML =
+        "<p>No tracks found.</p>";
 
       return;
 
     }
 
 
-    if (isPlaying) {
+    tracks.forEach(
+      track => {
 
-      pause();
+        const item =
+          document.createElement("div");
 
-    } else {
-
-      play();
-
-    }
-
-  }
+        item.className =
+          "search-track";
 
 
-  /* STATUS */
-
-  function updateStatus() {
-
-    statusLine.textContent =
-      `${isPlaying ? "Playing" : "Paused"} · Track ${
-        current + 1
-      } of ${
-        tracks.length
-      }${
-        shuffle ? " · Shuffle" : ""
-      }${
-        repeat ? " · Repeat" : ""
-      }`;
-
-  }
+        const image =
+          track.album?.images?.[2]?.url ||
+          track.album?.images?.[0]?.url ||
+          "";
 
 
-  /* NEXT */
+        item.innerHTML = `
 
-  function nextTrack() {
+          <img
+            src="${image}"
+            alt="${escapeHTML(track.name)}"
+          >
 
-    if (shuffle) {
+          <div class="search-track-info">
 
-      let randomIndex;
+            <strong>
+              ${escapeHTML(track.name)}
+            </strong>
+
+            <span>
+              ${escapeHTML(
+                track.artists
+                  .map(a => a.name)
+                  .join(", ")
+              )}
+            </span>
+
+          </div>
+
+          <button>
+            Play
+          </button>
+
+        `;
 
 
-      do {
+        item
+          .querySelector("button")
+          .addEventListener(
+            "click",
+            () => {
 
-        randomIndex =
-          Math.floor(
-            Math.random() *
-            tracks.length
+              playSpotifyTrack(
+                track.uri
+              );
+
+            }
           );
 
-      } while (
-        tracks.length > 1 &&
-        randomIndex === current
-      );
 
+        searchResults.appendChild(
+          item
+        );
 
-      loadTrack(
-        randomIndex,
-        true
-      );
-
-    } else {
-
-      loadTrack(
-        current + 1,
-        true
-      );
-
-    }
+      }
+    );
 
   }
 
 
-  /* PREVIOUS */
+  /* ================================
+     PLAY SPOTIFY TRACK
+  ================================= */
 
-  function prevTrack() {
+  async function playSpotifyTrack(
+    uri
+  ) {
 
-    if (
-      audio.currentTime > 3
-    ) {
+    if (!accessToken || !deviceId) {
 
-      audio.currentTime = 0;
+      alert(
+        "Spotify player is still connecting. Please wait a moment."
+      );
 
       return;
 
     }
 
 
-    loadTrack(
-      current - 1,
-      true
-    );
+    try {
 
-  }
+      const response =
+        await fetch(
+          `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
+          {
 
+            method: "PUT",
 
-  /* PROGRESS */
+            headers: {
 
-  function renderProgress() {
+              Authorization:
+                `Bearer ${accessToken}`,
 
-    const duration =
-      audio.duration || 0;
+              "Content-Type":
+                "application/json"
 
+            },
 
-    const currentTime =
-      audio.currentTime || 0;
+            body:
+              JSON.stringify({
 
+                uris: [uri]
 
-    const ratio =
-      duration
-        ? currentTime / duration
-        : 0;
+              })
 
-
-    const filledCount =
-      Math.round(
-        ratio * BAR_COUNT
-      );
+          }
+        );
 
 
-    barEls.forEach(
-      (bar, index) => {
+      if (!response.ok) {
 
-        bar.classList.toggle(
-          "fill",
-          index < filledCount
+        const error =
+          await response.json();
+
+        console.error(error);
+
+        alert(
+          error.error?.message ||
+          "Unable to start playback."
         );
 
       }
-    );
 
+    } catch (error) {
 
-    curTimeEl.textContent =
-      fmt(currentTime);
-
-
-    durTimeEl.textContent =
-      fmt(duration);
-
-  }
-
-
-  /* SEEK */
-
-  function seekFromClientX(
-    clientX
-  ) {
-
-    const rect =
-      barsEl.getBoundingClientRect();
-
-
-    let ratio =
-      (
-        clientX - rect.left
-      ) / rect.width;
-
-
-    ratio =
-      Math.min(
-        1,
-        Math.max(0, ratio)
-      );
-
-
-    if (audio.duration) {
-
-      audio.currentTime =
-        ratio * audio.duration;
-
-
-      renderProgress();
+      console.error(error);
 
     }
 
   }
 
 
-  let dragging = false;
-
-
-  barsEl.addEventListener(
-    "mousedown",
-    (event) => {
-
-      dragging = true;
-
-      seekFromClientX(
-        event.clientX
-      );
-
-    }
-  );
-
-
-  window.addEventListener(
-    "mousemove",
-    (event) => {
-
-      if (dragging) {
-
-        seekFromClientX(
-          event.clientX
-        );
-
-      }
-
-    }
-  );
-
-
-  window.addEventListener(
-    "mouseup",
-    () => {
-
-      dragging = false;
-
-    }
-  );
-
+  /* ================================
+     SEEK
+  ================================= */
 
   barsEl.addEventListener(
-    "touchstart",
-    (event) => {
+    "click",
+    event => {
 
-      dragging = true;
-
-      seekFromClientX(
-        event.touches[0].clientX
-      );
-
-    },
-    { passive: true }
-  );
-
-
-  barsEl.addEventListener(
-    "touchmove",
-    (event) => {
-
-      if (dragging) {
-
-        seekFromClientX(
-          event.touches[0].clientX
-        );
-
-      }
-
-    },
-    { passive: true }
-  );
-
-
-  window.addEventListener(
-    "touchend",
-    () => {
-
-      dragging = false;
-
-    }
-  );
-
-
-  barsEl.addEventListener(
-    "keydown",
-    (event) => {
-
-      if (!audio.duration) {
+      if (!player) {
         return;
       }
 
 
-      if (
-        event.key === "ArrowRight"
-      ) {
-
-        audio.currentTime =
-          Math.min(
-            audio.duration,
-            audio.currentTime + 5
-          );
-
-      }
+      const rect =
+        barsEl.getBoundingClientRect();
 
 
-      if (
-        event.key === "ArrowLeft"
-      ) {
-
-        audio.currentTime =
+      const ratio =
+        Math.min(
+          1,
           Math.max(
             0,
-            audio.currentTime - 5
-          );
-
-      }
-
-    }
-  );
-
-
-  /* AUDIO EVENTS */
-
-  audio.addEventListener(
-    "timeupdate",
-    renderProgress
-  );
-
-
-  audio.addEventListener(
-    "loadedmetadata",
-    () => {
-
-      renderProgress();
-
-
-      const durationElement =
-        playlistEl.querySelector(
-          `[data-dur="${current}"]`
+            (event.clientX - rect.left) /
+            rect.width
+          )
         );
 
 
-      if (durationElement) {
+      player.getCurrentState()
+        .then(state => {
 
-        durationElement.textContent =
-          fmt(audio.duration);
-
-      }
-
-    }
-  );
+          if (!state) {
+            return;
+          }
 
 
-  audio.addEventListener(
-    "ended",
-    () => {
+          const position =
+            state.duration * ratio;
 
-      if (repeat) {
 
-        audio.currentTime = 0;
+          player.seek(
+            position
+          );
 
-        play();
-
-      } else {
-
-        nextTrack();
-
-      }
+        });
 
     }
   );
 
 
-  /* CONTROLS */
-
-  playBtn.addEventListener(
-    "click",
-    togglePlay
-  );
-
-
-  nextBtn.addEventListener(
-    "click",
-    nextTrack
-  );
-
-
-  prevBtn.addEventListener(
-    "click",
-    prevTrack
-  );
-
-
-  shuffleBtn.addEventListener(
-    "click",
-    () => {
-
-      shuffle = !shuffle;
-
-      shuffleBtn.classList.toggle(
-        "active",
-        shuffle
-      );
-
-      updateStatus();
-
-    }
-  );
-
-
-  repeatBtn.addEventListener(
-    "click",
-    () => {
-
-      repeat = !repeat;
-
-      repeatBtn.classList.toggle(
-        "active",
-        repeat
-      );
-
-      updateStatus();
-
-    }
-  );
-
-
-  volumeInput.addEventListener(
-    "input",
-    () => {
-
-      audio.volume =
-        Number(volumeInput.value) / 100;
-
-    }
-  );
-
-
-  /* KEYBOARD SHORTCUTS */
+  /* ================================
+     KEYBOARD
+  ================================= */
 
   document.addEventListener(
     "keydown",
-    (event) => {
+    event => {
 
       if (
         event.target.tagName === "INPUT"
@@ -1003,31 +1215,33 @@ updateSpotifyButton();
       }
 
 
-      if (event.code === "Space") {
+      if (
+        event.code === "Space"
+      ) {
 
         event.preventDefault();
 
-        togglePlay();
+        player?.togglePlay();
 
       }
 
 
       if (
-        event.code === "ArrowRight" &&
-        event.shiftKey
+        event.shiftKey &&
+        event.code === "ArrowRight"
       ) {
 
-        nextTrack();
+        player?.nextTrack();
 
       }
 
 
       if (
-        event.code === "ArrowLeft" &&
-        event.shiftKey
+        event.shiftKey &&
+        event.code === "ArrowLeft"
       ) {
 
-        prevTrack();
+        player?.previousTrack();
 
       }
 
@@ -1035,55 +1249,58 @@ updateSpotifyButton();
   );
 
 
-  /* INITIALIZE */
+  /* ================================
+     HTML ESCAPE
+  ================================= */
 
-  audio.volume =
-    Number(volumeInput.value) / 100;
+  function escapeHTML(value) {
 
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
 
-  renderPlaylist();
-
-  loadTrack(0, false);
-
-
-  /* PRELOAD DURATIONS */
-
-  tracks.forEach(
-    (track, index) => {
-
-      const probe =
-        new Audio();
+  }
 
 
-      probe.preload =
-        "metadata";
+  /* ================================
+     START
+  ================================= */
+
+  async function start() {
+
+    const authenticated =
+      await handleCallback();
 
 
-      probe.src =
-        track.src;
+    if (!authenticated && !accessToken) {
 
+      loginScreen.style.display =
+        "flex";
 
-      probe.addEventListener(
-        "loadedmetadata",
-        () => {
+      playerApp.style.display =
+        "none";
 
-          const durationElement =
-            playlistEl.querySelector(
-              `[data-dur="${index}"]`
-            );
-
-
-          if (durationElement) {
-
-            durationElement.textContent =
-              fmt(probe.duration);
-
-          }
-
-        }
-      );
+      return;
 
     }
-  );
+
+
+    loginScreen.style.display =
+      "none";
+
+    playerApp.style.display =
+      "grid";
+
+
+    statusLine.textContent =
+      "Connecting to Spotify...";
+
+  }
+
+
+  start();
 
 })();
