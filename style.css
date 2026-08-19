@@ -1050,3 +1050,8 @@ input:focus-visible,
   background: #1ed760;
   transform: translateY(-2px);
 }
+.spotify-login.connected {
+  background: #191414;
+  border: 1px solid #1db954;
+  color: #1db954;
+}
