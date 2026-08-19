@@ -587,7 +587,18 @@
       );
 
 
-      player.connect();
+      
+    player.connect().then(success => {
+
+  if (success) {
+    console.log("Spotify SDK connected successfully");
+    statusLine.textContent = "Spotify Connected";
+  } else {
+    console.error("Spotify SDK connection failed");
+    statusLine.textContent = "Spotify connection failed";
+  }
+
+});
 
     };
 
