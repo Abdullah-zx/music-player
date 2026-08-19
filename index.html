@@ -8,6 +8,7 @@
   <title>Late Groove | Spotify Player</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
+
   <link
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
     rel="stylesheet"
@@ -23,7 +24,9 @@
 
     <div class="login-card">
 
-      <div class="login-logo">Late Groove</div>
+      <div class="login-logo">
+        Late Groove
+      </div>
 
       <p>
         Connect your Spotify account to start listening.
@@ -95,6 +98,7 @@
 
       </div>
 
+
       <div class="now-meta">
 
         <div class="now-title" id="nowTitle">
@@ -106,6 +110,7 @@
         </div>
 
       </div>
+
 
       <div class="viz" id="viz">
         <i></i>
@@ -135,6 +140,7 @@
           type="text"
           id="searchInput"
           placeholder="Search Spotify..."
+          autocomplete="off"
         >
 
         <button id="searchBtn">
@@ -145,7 +151,10 @@
 
 
       <!-- SEARCH RESULTS -->
-      <div id="searchResults" class="search-results"></div>
+      <div
+        id="searchResults"
+        class="search-results"
+      ></div>
 
 
       <!-- PROGRESS -->
@@ -181,6 +190,7 @@
           class="tbtn toggle"
           id="shuffleBtn"
           title="Shuffle"
+          aria-label="Shuffle"
         >
           ⇄
         </button>
@@ -190,6 +200,7 @@
           class="tbtn"
           id="prevBtn"
           title="Previous"
+          aria-label="Previous"
         >
           ◀
         </button>
@@ -199,6 +210,7 @@
           class="play-btn"
           id="playBtn"
           title="Play"
+          aria-label="Play or pause"
         >
 
           <svg
@@ -216,6 +228,7 @@
           class="tbtn"
           id="nextBtn"
           title="Next"
+          aria-label="Next"
         >
           ▶
         </button>
@@ -225,6 +238,7 @@
           class="tbtn toggle"
           id="repeatBtn"
           title="Repeat"
+          aria-label="Repeat"
         >
           ↻
         </button>
@@ -245,6 +259,7 @@
             min="0"
             max="100"
             value="70"
+            aria-label="Volume"
           >
 
         </div>
@@ -276,11 +291,28 @@
   </div>
 
 
+  <!-- AUDIO -->
   <audio id="audio"></audio>
 
 
-  <!-- SPOTIFY WEB PLAYBACK SDK -->
+  <!-- IMPORTANT: SPOTIFY SDK MUST LOAD BEFORE script.js -->
+
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
+
+  <script>
+    window.onSpotifyWebPlaybackSDKReady = function () {
+      console.log("Spotify Web Playback SDK loaded successfully.");
+
+      window.spotifySDKReady = true;
+
+      document.dispatchEvent(
+        new Event("spotify-sdk-ready")
+      );
+    };
+  </script>
+
+
+  <!-- YOUR JAVASCRIPT -->
 
   <script src="script.js"></script>
 

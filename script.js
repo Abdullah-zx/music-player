@@ -1,190 +1,138 @@
 (() => {
 
-  /* ================================
-     SPOTIFY CONFIG
-  ================================= */
-
   const CLIENT_ID = "4ecf3c792b244381bef1eb73f5c78055";
-
-  const REDIRECT_URI =
-    "https://abdullah-zx.github.io/music-player/";
+  const REDIRECT_URI = "https://abdullah-zx.github.io/music-player/";
 
   const SCOPES = [
     "streaming",
     "user-read-email",
     "user-read-private",
     "user-modify-playback-state"
-  ];
+  ].join(" ");
 
 
-  /* ================================
+  /* =========================
      DOM
-  ================================= */
+  ========================= */
 
-  const loginScreen =
-    document.getElementById("loginScreen");
+  const loginScreen = document.getElementById("loginScreen");
+  const playerApp = document.getElementById("playerApp");
+  const loginBtn = document.getElementById("loginBtn");
+  const loginStatus = document.getElementById("loginStatus");
 
-  const playerApp =
-    document.getElementById("playerApp");
+  const playBtn = document.getElementById("playBtn");
+  const playIcon = document.getElementById("playIcon");
 
-  const loginBtn =
-    document.getElementById("loginBtn");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
 
-  const loginStatus =
-    document.getElementById("loginStatus");
+  const shuffleBtn = document.getElementById("shuffleBtn");
+  const repeatBtn = document.getElementById("repeatBtn");
 
-  const playBtn =
-    document.getElementById("playBtn");
+  const barsEl = document.getElementById("bars");
+  const curTimeEl = document.getElementById("curTime");
+  const durTimeEl = document.getElementById("durTime");
 
-  const playIcon =
-    document.getElementById("playIcon");
+  const nowTitle = document.getElementById("nowTitle");
+  const nowArtist = document.getElementById("nowArtist");
 
-  const prevBtn =
-    document.getElementById("prevBtn");
+  const statusLine = document.getElementById("statusLine");
 
-  const nextBtn =
-    document.getElementById("nextBtn");
+  const platter = document.getElementById("platter");
+  const tonearm = document.getElementById("tonearm");
+  const viz = document.getElementById("viz");
 
-  const shuffleBtn =
-    document.getElementById("shuffleBtn");
+  const volumeInput = document.getElementById("volume");
 
-  const repeatBtn =
-    document.getElementById("repeatBtn");
-
-  const barsEl =
-    document.getElementById("bars");
-
-  const curTimeEl =
-    document.getElementById("curTime");
-
-  const durTimeEl =
-    document.getElementById("durTime");
-
-  const nowTitle =
-    document.getElementById("nowTitle");
-
-  const nowArtist =
-    document.getElementById("nowArtist");
-
-  const statusLine =
-    document.getElementById("statusLine");
-
-  const platter =
-    document.getElementById("platter");
-
-  const tonearm =
-    document.getElementById("tonearm");
-
-  const viz =
-    document.getElementById("viz");
-
-  const volumeInput =
-    document.getElementById("volume");
-
-  const playlistEl =
-    document.getElementById("playlist");
-
-  const playlistCount =
-    document.getElementById("playlistCount");
-
-  const searchInput =
-    document.getElementById("searchInput");
-
-  const searchBtn =
-    document.getElementById("searchBtn");
-
-  const searchResults =
-    document.getElementById("searchResults");
+  const searchInput = document.getElementById("searchInput");
+  const searchBtn = document.getElementById("searchBtn");
+  const searchResults = document.getElementById("searchResults");
 
 
-  /* ================================
+  /* =========================
      VARIABLES
-  ================================= */
+  ========================= */
 
   const BAR_COUNT = 48;
 
   let accessToken = null;
-
   let player = null;
-
   let deviceId = null;
 
-  let currentTrack = null;
-
   let isPlaying = false;
-
   let shuffle = false;
-
   let repeat = false;
 
 
-  /* ================================
+  /* =========================
+     SEEK BARS
+  ========================= */
+
+  for (let i = 0; i < BAR_COUNT; i++) {
+
+    const bar = document.createElement("div");
+
+    bar.className = "bar";
+
+    barsEl.appendChild(bar);
+
+  }
+
+  const barEls = Array.from(barsEl.children);
+
+
+  /* =========================
      PKCE
-  ================================= */
+  ========================= */
 
   function randomString(length = 64) {
 
     const chars =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-    let result = "";
-
-    const randomValues =
+    const values =
       crypto.getRandomValues(
         new Uint8Array(length)
       );
 
-    randomValues.forEach(value => {
-      result += chars[value % chars.length];
-    });
+    return Array.from(values)
+      .map(value => chars[value % chars.length])
+      .join("");
 
-    return result;
-  }
-
-
-  async function sha256(plain) {
-
-    const encoder =
-      new TextEncoder();
-
-    const data =
-      encoder.encode(plain);
-
-    return window.crypto.subtle.digest(
-      "SHA-256",
-      data
-    );
-  }
-
-
-  function base64urlencode(input) {
-
-    return btoa(
-      String.fromCharCode(...new Uint8Array(input))
-    )
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
   }
 
 
   async function createChallenge(verifier) {
 
-    const hashed =
-      await sha256(verifier);
+    const data =
+      new TextEncoder().encode(verifier);
 
-    return base64urlencode(hashed);
+    const digest =
+      await crypto.subtle.digest(
+        "SHA-256",
+        data
+      );
+
+    return btoa(
+      String.fromCharCode(
+        ...new Uint8Array(digest)
+      )
+    )
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+
   }
 
 
-  /* ================================
+  /* =========================
      LOGIN
-  ================================= */
+  ========================= */
 
   async function login() {
 
     const verifier =
-      randomString(64);
+      randomString();
 
     const challenge =
       await createChallenge(verifier);
@@ -195,22 +143,37 @@
     );
 
     const params =
-      new URLSearchParams({
+      new URLSearchParams();
 
-        client_id: CLIENT_ID,
+    params.set(
+      "client_id",
+      CLIENT_ID
+    );
 
-        response_type: "code",
+    params.set(
+      "response_type",
+      "code"
+    );
 
-        redirect_uri: REDIRECT_URI,
+    params.set(
+      "redirect_uri",
+      REDIRECT_URI
+    );
 
-        code_challenge_method: "S256",
+    params.set(
+      "code_challenge_method",
+      "S256"
+    );
 
-        code_challenge: challenge,
+    params.set(
+      "code_challenge",
+      challenge
+    );
 
-        scope: SCOPES.join(" ")
-
-      });
-
+    params.set(
+      "scope",
+      SCOPES
+    );
 
     window.location.href =
       "https://accounts.spotify.com/authorize?" +
@@ -225,9 +188,9 @@
   );
 
 
-  /* ================================
-     GET ACCESS TOKEN
-  ================================= */
+  /* =========================
+     CALLBACK
+  ========================= */
 
   async function handleCallback() {
 
@@ -246,7 +209,7 @@
     if (error) {
 
       loginStatus.textContent =
-        "Spotify login was cancelled.";
+        "Spotify login cancelled.";
 
       return false;
 
@@ -269,7 +232,7 @@
     if (!verifier) {
 
       loginStatus.textContent =
-        "Login session expired. Please login again.";
+        "Login session expired. Login again.";
 
       return false;
 
@@ -277,6 +240,10 @@
 
 
     try {
+
+      loginStatus.textContent =
+        "Connecting to Spotify...";
+
 
       const response =
         await fetch(
@@ -320,10 +287,14 @@
 
       if (!response.ok) {
 
-        console.error(data);
+        console.error(
+          "Spotify Token Error:",
+          data
+        );
 
         throw new Error(
-          "Token request failed"
+          data.error_description ||
+          "Authentication failed"
         );
 
       }
@@ -331,6 +302,12 @@
 
       accessToken =
         data.access_token;
+
+
+      localStorage.setItem(
+        "spotify_access_token",
+        accessToken
+      );
 
 
       localStorage.removeItem(
@@ -361,298 +338,368 @@
   }
 
 
-  /* ================================
-     SPOTIFY PLAYER
-  ================================= */
+  /* =========================
+     SPOTIFY SDK
+  ========================= */
 
-  window.onSpotifyWebPlaybackSDKReady =
-    () => {
+  function initializeSpotifyPlayer() {
 
-      if (!accessToken) {
-        return;
-      }
+    if (!accessToken) {
 
-
-      player =
-        new Spotify.Player({
-
-          name:
-            "Late Groove",
-
-          volume:
-            Number(volumeInput.value) / 100,
-
-          getOAuthToken: callback => {
-
-            callback(accessToken);
-
-          },
-
-          enableMediaSession: true
-
-        });
-
-
-      /* READY */
-
-      player.addListener(
-  "ready",
-  async ({ device_id }) => {
-
-    deviceId = device_id;
-
-    console.log("Spotify Device Ready:", device_id);
-
-    statusLine.textContent =
-      "Spotify Connected";
-
-    nowArtist.textContent =
-      "Ready to play";
-
-    try {
-
-      const response = await fetch(
-        "https://api.spotify.com/v1/me/player",
-        {
-          method: "PUT",
-
-          headers: {
-            Authorization:
-              `Bearer ${accessToken}`,
-            "Content-Type":
-              "application/json"
-          },
-
-          body: JSON.stringify({
-            device_ids: [device_id],
-            play: false
-          })
-        }
+      console.log(
+        "No Spotify access token."
       );
 
-      if (!response.ok) {
+      return;
 
-        const error =
-          await response.json();
+    }
 
-        console.error(
-          "Transfer error:",
-          error
+
+    if (
+      typeof Spotify === "undefined"
+    ) {
+
+      console.error(
+        "Spotify SDK not loaded."
+      );
+
+      statusLine.textContent =
+        "Spotify SDK failed to load.";
+
+      return;
+
+    }
+
+
+    console.log(
+      "Initializing Spotify Player..."
+    );
+
+
+    player =
+      new Spotify.Player({
+
+        name:
+          "Late Groove",
+
+        volume:
+          Number(volumeInput.value) / 100,
+
+        getOAuthToken:
+          callback => {
+
+            callback(
+              accessToken
+            );
+
+          },
+
+        enableMediaSession:
+          true
+
+      });
+
+
+    /* READY */
+
+    player.addListener(
+      "ready",
+      ({ device_id }) => {
+
+        deviceId =
+          device_id;
+
+        console.log(
+          "Spotify Device Ready:",
+          deviceId
         );
 
         statusLine.textContent =
-          "Spotify device transfer failed.";
+          "Spotify Ready";
+
+        nowTitle.textContent =
+          "Late Groove";
+
+        nowArtist.textContent =
+          "Spotify Connected";
+
+      }
+    );
+
+
+    /* NOT READY */
+
+    player.addListener(
+      "not_ready",
+      ({ device_id }) => {
+
+        console.log(
+          "Spotify device offline:",
+          device_id
+        );
+
+        statusLine.textContent =
+          "Spotify device offline.";
+
+      }
+    );
+
+
+    /* PLAYER STATE */
+
+    player.addListener(
+      "player_state_changed",
+      state => {
+
+        if (!state) {
+          return;
+        }
+
+
+        const track =
+          state.track_window.current_track;
+
+
+        if (track) {
+
+          nowTitle.textContent =
+            track.name;
+
+          nowArtist.textContent =
+            track.artists
+              .map(
+                artist => artist.name
+              )
+              .join(", ");
+
+        }
+
+
+        isPlaying =
+          !state.paused;
+
+
+        updatePlaybackState(
+          state
+        );
+
+      }
+    );
+
+
+    /* ERRORS */
+
+    player.addListener(
+      "initialization_error",
+      ({ message }) => {
+
+        console.error(
+          "Initialization Error:",
+          message
+        );
+
+        statusLine.textContent =
+          "Spotify player initialization failed.";
+
+      }
+    );
+
+
+    player.addListener(
+      "authentication_error",
+      ({ message }) => {
+
+        console.error(
+          "Authentication Error:",
+          message
+        );
+
+        statusLine.textContent =
+          "Spotify authentication failed.";
+
+      }
+    );
+
+
+    player.addListener(
+      "account_error",
+      ({ message }) => {
+
+        console.error(
+          "Account Error:",
+          message
+        );
+
+        statusLine.textContent =
+          "Spotify Premium is required.";
+
+      }
+    );
+
+
+    player.addListener(
+      "playback_error",
+      ({ message }) => {
+
+        console.error(
+          "Playback Error:",
+          message
+        );
+
+        statusLine.textContent =
+          "Spotify playback error.";
+
+      }
+    );
+
+
+    /* CONNECT */
+
+    player.connect()
+      .then(success => {
+
+        console.log(
+          "SPOTIFY CONNECT RESULT:",
+          success
+        );
+
+        if (success) {
+
+          statusLine.textContent =
+            "Connecting Spotify device...";
+
+        } else {
+
+          statusLine.textContent =
+            "Spotify connection failed.";
+
+        }
+
+      });
+
+  }
+
+
+  /* =========================
+     WAIT FOR SDK
+  ========================= */
+
+  function waitForSpotifySDK() {
+
+    if (
+      typeof Spotify !== "undefined"
+    ) {
+
+      initializeSpotifyPlayer();
+
+      return;
+
+    }
+
+
+    console.log(
+      "Waiting for Spotify SDK..."
+    );
+
+
+    setTimeout(
+      waitForSpotifySDK,
+      300
+    );
+
+  }
+
+
+  /* =========================
+     PLAY / PAUSE
+  ========================= */
+
+  playBtn.addEventListener(
+    "click",
+    async () => {
+
+      if (!player) {
+
+        statusLine.textContent =
+          "Spotify player is connecting...";
 
         return;
+
       }
 
-      statusLine.textContent =
-        "Spotify Ready";
-
-      console.log(
-        "Playback transferred to Late Groove"
-      );
-
-    } catch (error) {
-
-      console.error(error);
+      await player.togglePlay();
 
     }
-
-  }
-);
+  );
 
 
-      /* NOT READY */
+  /* =========================
+     NEXT
+  ========================= */
 
-      player.addListener(
-        "not_ready",
-        ({ device_id }) => {
+  nextBtn.addEventListener(
+    "click",
+    async () => {
 
-          console.log(
-            "Device offline:",
-            device_id
-          );
+      if (!player) return;
 
-          statusLine.textContent =
-            "Spotify device offline";
+      await player.nextTrack();
 
-        }
-      );
-
-
-      /* PLAYER STATE */
-
-      player.addListener(
-        "player_state_changed",
-        state => {
-
-          if (!state) {
-            return;
-          }
-
-
-          const track =
-            state.track_window.current_track;
-
-
-          currentTrack =
-            track;
-
-
-          isPlaying =
-            !state.paused;
-
-
-          updateTrackInfo(track);
-
-          updatePlaybackState(state);
-
-        }
-      );
-
-
-      /* ERRORS */
-
-      player.addListener(
-        "initialization_error",
-        ({ message }) => {
-
-          console.error(
-            "Initialization:",
-            message
-          );
-
-        }
-      );
-
-
-      player.addListener(
-        "authentication_error",
-        ({ message }) => {
-
-          console.error(
-            "Authentication:",
-            message
-          );
-
-          statusLine.textContent =
-            "Spotify authentication error.";
-
-        }
-      );
-
-
-      player.addListener(
-        "account_error",
-        ({ message }) => {
-
-          console.error(
-            "Account:",
-            message
-          );
-
-          statusLine.textContent =
-            "Spotify Premium is required.";
-
-        }
-      );
-
-
-      player.addListener(
-        "playback_error",
-        ({ message }) => {
-
-          console.error(
-            "Playback:",
-            message
-          );
-
-          statusLine.textContent =
-            "Playback error.";
-
-        }
-      );
-
-
-      player.addListener(
-        "autoplay_failed",
-        () => {
-
-          console.log(
-            "Autoplay blocked by browser."
-          );
-
-        }
-      );
-
-
-      
-    player.connect().then(success => {
-  console.log("SPOTIFY CONNECT RESULT:", success);
-
-  if (success) {
-    statusLine.textContent = "Spotify Connected";
-  } else {
-    statusLine.textContent = "Spotify connection failed";
-  }
-});
-
-    };
-
-
-  /* ================================
-     TRACK INFO
-  ================================= */
-
-  function updateTrackInfo(track) {
-
-    if (!track) {
-      return;
     }
+  );
 
 
-    nowTitle.textContent =
-      track.name;
+  /* =========================
+     PREVIOUS
+  ========================= */
+
+  prevBtn.addEventListener(
+    "click",
+    async () => {
+
+      if (!player) return;
+
+      await player.previousTrack();
+
+    }
+  );
 
 
-    nowArtist.textContent =
-      track.artists
-        .map(artist => artist.name)
-        .join(", ");
+  /* =========================
+     VOLUME
+  ========================= */
 
+  volumeInput.addEventListener(
+    "input",
+    () => {
 
-    if (track.album?.images?.length) {
+      if (!player) return;
 
-      const image =
-        track.album.images[0].url;
-
-      document.body.style.setProperty(
-        "--album-art",
-        `url("${image}")`
+      player.setVolume(
+        Number(volumeInput.value) / 100
       );
 
     }
+  );
 
-  }
 
+  /* =========================
+     PLAYBACK UI
+  ========================= */
 
-  /* ================================
-     PLAYBACK STATE
-  ================================= */
-
-  function updatePlaybackState(state) {
+  function updatePlaybackState(
+    state
+  ) {
 
     const position =
-      state.position;
+      state.position || 0;
 
     const duration =
-      state.duration;
+      state.duration || 0;
 
 
     curTimeEl.textContent =
       formatTime(position);
-
 
     durTimeEl.textContent =
       formatTime(duration);
@@ -726,16 +773,12 @@
         "Play";
 
       statusLine.textContent =
-        "Paused";
+        "Spotify Ready";
 
     }
 
   }
 
-
-  /* ================================
-     TIME
-  ================================= */
 
   function formatTime(ms) {
 
@@ -749,204 +792,16 @@
       String(seconds % 60)
         .padStart(2, "0");
 
-
-    return `${minutes}:${remaining}`;
-
-  }
-
-
-  /* ================================
-     SEEK BARS
-  ================================= */
-
-  for (
-    let i = 0;
-    i < BAR_COUNT;
-    i++
-  ) {
-
-    const bar =
-      document.createElement("div");
-
-    bar.className =
-      "bar";
-
-    barsEl.appendChild(bar);
-
-  }
-
-
-  const barEls =
-    Array.from(
-      barsEl.children
+    return (
+      `${minutes}:${remaining}`
     );
 
-
-  /* ================================
-     PLAY / PAUSE
-  ================================= */
-
-  playBtn.addEventListener(
-    "click",
-    async () => {
-
-      if (!player) {
-        return;
-      }
+  }
 
 
-      await player.togglePlay();
-
-    }
-  );
-
-
-  /* ================================
-     NEXT
-  ================================= */
-
-  nextBtn.addEventListener(
-    "click",
-    async () => {
-
-      if (!player) {
-        return;
-      }
-
-
-      await player.nextTrack();
-
-    }
-  );
-
-
-  /* ================================
-     PREVIOUS
-  ================================= */
-
-  prevBtn.addEventListener(
-    "click",
-    async () => {
-
-      if (!player) {
-        return;
-      }
-
-
-      await player.previousTrack();
-
-    }
-  );
-
-
-  /* ================================
-     VOLUME
-  ================================= */
-
-  volumeInput.addEventListener(
-    "input",
-    () => {
-
-      if (!player) {
-        return;
-      }
-
-
-      player.setVolume(
-        Number(volumeInput.value) / 100
-      );
-
-    }
-  );
-
-
-  /* ================================
-     SHUFFLE
-  ================================= */
-
-  shuffleBtn.addEventListener(
-    "click",
-    async () => {
-
-      shuffle =
-        !shuffle;
-
-
-      shuffleBtn.classList.toggle(
-        "active",
-        shuffle
-      );
-
-
-      if (!accessToken) {
-        return;
-      }
-
-
-      await fetch(
-        "https://api.spotify.com/v1/me/player/shuffle?state=" +
-        shuffle,
-        {
-
-          method: "PUT",
-
-          headers: {
-            Authorization:
-              `Bearer ${accessToken}`
-          }
-
-        }
-      );
-
-    }
-  );
-
-
-  /* ================================
-     REPEAT
-  ================================= */
-
-  repeatBtn.addEventListener(
-    "click",
-    async () => {
-
-      repeat =
-        !repeat;
-
-
-      repeatBtn.classList.toggle(
-        "active",
-        repeat
-      );
-
-
-      if (!accessToken) {
-        return;
-      }
-
-
-      await fetch(
-        "https://api.spotify.com/v1/me/player/repeat?state=" +
-        (repeat ? "track" : "off"),
-        {
-
-          method: "PUT",
-
-          headers: {
-            Authorization:
-              `Bearer ${accessToken}`
-          }
-
-        }
-      );
-
-    }
-  );
-
-
-  /* ================================
-     SEARCH SPOTIFY
-  ================================= */
+  /* =========================
+     SEARCH
+  ========================= */
 
   searchBtn.addEventListener(
     "click",
@@ -958,7 +813,9 @@
     "keydown",
     event => {
 
-      if (event.key === "Enter") {
+      if (
+        event.key === "Enter"
+      ) {
 
         searchSpotify();
 
@@ -974,13 +831,23 @@
       searchInput.value.trim();
 
 
-    if (!query || !accessToken) {
+    if (!query) {
       return;
     }
 
 
+    if (!accessToken) {
+
+      searchResults.innerHTML =
+        "<p>Please login to Spotify first.</p>";
+
+      return;
+
+    }
+
+
     searchResults.innerHTML =
-      "<p>Searching...</p>";
+      "<p>Searching Spotify...</p>";
 
 
     try {
@@ -1041,9 +908,9 @@
   }
 
 
-  /* ================================
+  /* =========================
      SEARCH RESULTS
-  ================================= */
+  ========================= */
 
   function renderSearchResults(
     tracks
@@ -1067,7 +934,9 @@
       track => {
 
         const item =
-          document.createElement("div");
+          document.createElement(
+            "div"
+          );
 
         item.className =
           "search-track";
@@ -1083,19 +952,26 @@
 
           <img
             src="${image}"
-            alt="${escapeHTML(track.name)}"
+            alt=""
           >
 
-          <div class="search-track-info">
+          <div
+            class="search-track-info"
+          >
 
             <strong>
-              ${escapeHTML(track.name)}
+              ${escapeHTML(
+                track.name
+              )}
             </strong>
 
             <span>
               ${escapeHTML(
                 track.artists
-                  .map(a => a.name)
+                  .map(
+                    artist =>
+                      artist.name
+                  )
                   .join(", ")
               )}
             </span>
@@ -1133,18 +1009,21 @@
   }
 
 
-  /* ================================
-     PLAY SPOTIFY TRACK
-  ================================= */
+  /* =========================
+     PLAY SEARCH RESULT
+  ========================= */
 
   async function playSpotifyTrack(
     uri
   ) {
 
-    if (!accessToken || !deviceId) {
+    if (
+      !accessToken ||
+      !deviceId
+    ) {
 
       alert(
-        "Spotify player is still connecting. Please wait a moment."
+        "Spotify player is still connecting."
       );
 
       return;
@@ -1187,11 +1066,13 @@
         const error =
           await response.json();
 
-        console.error(error);
+        console.error(
+          error
+        );
 
         alert(
           error.error?.message ||
-          "Unable to start playback."
+          "Unable to play track."
         );
 
       }
@@ -1205,17 +1086,102 @@
   }
 
 
-  /* ================================
+  /* =========================
+     SHUFFLE
+  ========================= */
+
+  shuffleBtn.addEventListener(
+    "click",
+    async () => {
+
+      shuffle =
+        !shuffle;
+
+      shuffleBtn.classList.toggle(
+        "active",
+        shuffle
+      );
+
+
+      if (!accessToken) return;
+
+
+      await fetch(
+        `https://api.spotify.com/v1/me/player/shuffle?state=${shuffle}`,
+        {
+
+          method: "PUT",
+
+          headers: {
+
+            Authorization:
+              `Bearer ${accessToken}`
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+
+  /* =========================
+     REPEAT
+  ========================= */
+
+  repeatBtn.addEventListener(
+    "click",
+    async () => {
+
+      repeat =
+        !repeat;
+
+      repeatBtn.classList.toggle(
+        "active",
+        repeat
+      );
+
+
+      if (!accessToken) return;
+
+
+      await fetch(
+        `https://api.spotify.com/v1/me/player/repeat?state=${repeat ? "track" : "off"}`,
+        {
+
+          method: "PUT",
+
+          headers: {
+
+            Authorization:
+              `Bearer ${accessToken}`
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+
+  /* =========================
      SEEK
-  ================================= */
+  ========================= */
 
   barsEl.addEventListener(
     "click",
-    event => {
+    async event => {
 
-      if (!player) {
-        return;
-      }
+      if (!player) return;
+
+
+      const state =
+        await player.getCurrentState();
+
+
+      if (!state) return;
 
 
       const rect =
@@ -1233,104 +1199,81 @@
         );
 
 
-      player.getCurrentState()
-        .then(state => {
-
-          if (!state) {
-            return;
-          }
-
-
-          const position =
-            state.duration * ratio;
-
-
-          player.seek(
-            position
-          );
-
-        });
+      await player.seek(
+        state.duration * ratio
+      );
 
     }
   );
 
 
-  /* ================================
-     KEYBOARD
-  ================================= */
+  /* =========================
+     ESCAPE HTML
+  ========================= */
 
-  document.addEventListener(
-    "keydown",
-    event => {
-
-      if (
-        event.target.tagName === "INPUT"
-      ) {
-        return;
-      }
-
-
-      if (
-        event.code === "Space"
-      ) {
-
-        event.preventDefault();
-
-        player?.togglePlay();
-
-      }
-
-
-      if (
-        event.shiftKey &&
-        event.code === "ArrowRight"
-      ) {
-
-        player?.nextTrack();
-
-      }
-
-
-      if (
-        event.shiftKey &&
-        event.code === "ArrowLeft"
-      ) {
-
-        player?.previousTrack();
-
-      }
-
-    }
-  );
-
-
-  /* ================================
-     HTML ESCAPE
-  ================================= */
-
-  function escapeHTML(value) {
+  function escapeHTML(
+    value
+  ) {
 
     return String(value)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+      .replaceAll(
+        "&",
+        "&amp;"
+      )
+      .replaceAll(
+        "<",
+        "&lt;"
+      )
+      .replaceAll(
+        ">",
+        "&gt;"
+      )
+      .replaceAll(
+        '"',
+        "&quot;"
+      )
+      .replaceAll(
+        "'",
+        "&#039;"
+      );
 
   }
 
 
-  /* ================================
+  /* =========================
      START
-  ================================= */
+  ========================= */
 
   async function start() {
+
+    console.log(
+      "Late Groove starting..."
+    );
+
 
     const authenticated =
       await handleCallback();
 
 
-    if (!authenticated && !accessToken) {
+    if (!authenticated) {
+
+      const savedToken =
+        localStorage.getItem(
+          "spotify_access_token"
+        );
+
+
+      if (savedToken) {
+
+        accessToken =
+          savedToken;
+
+      }
+
+    }
+
+
+    if (!accessToken) {
 
       loginScreen.style.display =
         "flex";
@@ -1349,9 +1292,11 @@
     playerApp.style.display =
       "grid";
 
-
     statusLine.textContent =
-      "Connecting to Spotify...";
+      "Loading Spotify...";
+
+
+    waitForSpotifySDK();
 
   }
 
